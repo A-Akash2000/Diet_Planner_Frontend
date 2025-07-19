@@ -50,6 +50,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             <Cog6ToothIcon className="w-5 h-5" />
             {user.role === 'Admin' ? 'Admin Settings' : 'User Settings'}
           </Link>
+          <Link to="/MealsManager" onClick={onClose} className={linkClass('/MealsManager')}>
+            <Cog6ToothIcon className="w-5 h-5" />
+            Diet Menu
+          </Link>
+             <Link to="/Dietplans" onClick={onClose} className={linkClass('/Dietplans')}>
+            <Cog6ToothIcon className="w-5 h-5" />
+            Diet Plans
+          </Link>
           <div
             onClick={handleLogout}
             className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600 cursor-pointer rounded-md transition"
