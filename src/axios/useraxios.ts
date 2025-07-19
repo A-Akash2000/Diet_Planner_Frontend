@@ -5,21 +5,14 @@ import type { UserState } from "../redux/userslice";
 
 interface IUser {
   _id: string;
-  username: string;
+  name: string;
   email: string;
   contactNumber: string;
   role: string;
-  shiftStart: string;
-  shiftEnd: string;
-  address: string;
-  gender: string;
-  isAvailable: boolean;
-  lastUpdated: string;
   createdAt?: string;
   updatedAt?: string;
   total?: string | number | null; // any used before
   deleted?: boolean;
-  profilePicture?: File | null | string;
 }
 
 interface GetUsersResponse {

@@ -7,36 +7,19 @@ export interface UserState {
   email: string;
   contactNumber: string;
   password: string;
-  confirmPassword: string;
   role: string;
-  shiftStart: string;
-  shiftEnd: string;
-  address: string;
-  gender: string;
-  isAvailable: boolean;
-  lastUpdated: string;
   deleted: boolean;
   createdAt:string;
-  profilePicture?: File | null |string ;
 }
 
 const initialState: UserState = {
   _id: '',
-  username: '',
+  name: '',
   email: '',
-  contactNumber: '',
   password: '',
-  confirmPassword: '',
   role: '',
-  shiftStart: '',
-  shiftEnd: '',
-  address: '',
-  gender: '',
-  isAvailable: true,
-  lastUpdated: '',
   deleted: false,
   createdAt:"",
-  profilePicture: ""
 };
 
 const userSlice = createSlice({
