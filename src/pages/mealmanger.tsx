@@ -8,15 +8,15 @@ import {
   TextField,
   Stack,
   Chip,
-  Paper,
-  TableContainer,
-  Typography,
 } from '@mui/material';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { ColumnDef } from '@tanstack/react-table';
 import { CommonTable } from '../component/commontable';
+import axios from 'axios';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 interface IMeal {
   _id: string;
@@ -42,42 +42,82 @@ const schema = yup.object().shape({
   ingredients: yup.array().of(yup.string()).optional()
 });
 
-export default function MealManager() {
-  const [meals, setMeals] = useState<IMeal[]>([
-    {
-      _id: String(Date.now() + 1),
-      name: 'Vegan Salad Bowl',
-      category: 'lunch',
-      dietaryTags: ['vegan', 'low-carb'],
-      calories: 350,
-      proteins: 12,
-      carbs: 25,
-      fats: 10,
-      ingredients: ['Lettuce', 'Tomato', 'Avocado'],
-      createdAt: new Date().toISOString()
-    },
-    {
-      _id: String(Date.now() + 2),
-      name: 'Oats with Berries',
-      category: 'breakfast',
-      dietaryTags: ['vegetarian'],
-      calories: 250,
-      proteins: 8,
-      carbs: 40,
-      fats: 5,
-      ingredients: ['Oats', 'Milk', 'Blueberries'],
-      createdAt: new Date().toISOString()
-    }
-  ]);
+// Dummy fallback meals
+const dummyMeals: IMeal[] = [
+  {
+    _id: '1',
+    name: 'Vegan Salad Bowl',
+    category: 'lunch',
+    dietaryTags: ['vegan', 'low-carb'],
+    calories: 350,
+    proteins: 12,
+    carbs: 25,
+    fats: 10,
+    ingredients: ['Lettuce', 'Tomato', 'Avocado'],
+    createdAt: new Date().toISOString()
+  },
+  {
+    _id: '2',
+    name: 'Oats with Berries',
+    category: 'breakfast',
+    dietaryTags: ['vegetarian'],
+    calories: 250,
+    proteins: 8,
+    carbs: 40,
+    fats: 5,
+    ingredients: ['Oats', 'Milk', 'Blueberries'],
+    createdAt: new Date().toISOString()
+  }
+];
 
+export default function MealManager() {
+  const [meals, setMeals] = useState<IMeal[]>([]);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(5);
   const [sortBy, setSortBy] = useState<string>();
   const [order, setOrder] = useState<'asc' | 'desc'>();
-
   const [modalOpen, setModalOpen] = useState(false);
   const [editingMeal, setEditingMeal] = useState<IMeal | null>(null);
+
+  const API_URL = 'https://your-api-url.com/api/meals'; // 🔁 Replace with your backend URL
+
+  const fetchMeals = async () => {
+    try {
+      const res = await axios.get<IMeal[]>(API_URL);
+      if (!res.data || res.data.length === 0) {
+        toast.info('No meals found. Showing dummy data.');
+        setMeals(dummyMeals);
+      } else {
+        setMeals(res.data);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to fetch meals. Using dummy data.');
+      setMeals(dummyMeals);
+    }
+  };
+
+  const saveMeal = async (data: IMeal) => {
+    try {
+      if (editingMeal) {
+        const updated = await axios.put(`${API_URL}/user/add-meal/${editingMeal._id}`, data);
+        setMeals(prev => prev.map(m => (m._id === editingMeal._id ? updated.data : m)));
+        toast.success('Meal updated successfully.');
+      } else {
+        const created = await axios.post(API_URL, data);
+        setMeals(prev => [...prev, created.data]);
+        toast.success('Meal added successfully.');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to save meal.');
+    }
+  };
+
+  useEffect(() => {
+    fetchMeals();
+  }, []);
 
   const filteredMeals = meals.filter(m =>
     m.name.toLowerCase().includes(search.toLowerCase())
@@ -124,25 +164,13 @@ export default function MealManager() {
   };
 
   const handleSubmit = (data: IMeal) => {
-    if (editingMeal) {
-      setMeals(prev =>
-        prev.map(m => (m._id === editingMeal._id ? { ...editingMeal, ...data } : m))
-      );
-    } else {
-      setMeals(prev => [
-        ...prev,
-        {
-          ...data,
-          _id: String(Date.now()),
-          createdAt: new Date().toISOString()
-        }
-      ]);
-    }
+    saveMeal(data);
     setModalOpen(false);
   };
 
   return (
     <>
+      <ToastContainer />
       <Button variant="contained" onClick={handleAdd} sx={{ mb: 2 }}>
         Add Meal
       </Button>

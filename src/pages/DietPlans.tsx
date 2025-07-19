@@ -1,5 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
+// Interfaces
 interface NutritionalValues {
   calories: number;
   proteins: number;
@@ -19,7 +23,7 @@ interface DietPlan {
   meals: Meal[];
 }
 
-// Mock data
+// Mock fallback data
 const mockDietPlans: DietPlan[] = [
   {
     _id: '1',
@@ -44,61 +48,91 @@ const mockDietPlans: DietPlan[] = [
         suggestedMeals: ['Fish', 'Steamed Vegetables', 'Quinoa'],
         nutritionalValues: { calories: 480, proteins: 28 },
       },
-       {
+      {
         mealId: 'm4',
         mealType: 'Snack',
-        suggestedMeals: ['Furits', 'Steamed Vegetables'],
-        nutritionalValues: { calories: 480, proteins: 28 },
+        suggestedMeals: ['Fruits', 'Steamed Vegetables'],
+        nutritionalValues: { calories: 200, proteins: 10 },
       },
     ],
   },
 ];
 
 const DietPlanPage: React.FC = () => {
+  const [dietPlans, setDietPlans] = useState<DietPlan[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDietPlans = async () => {
+      try {
+        const response = await axios.get<DietPlan[]>('https://your-api-url.com/api/diet-plans'); // 🔁 Replace with your actual endpoint
+        const data = response.data;
+        if (!data || data.length === 0) {
+          toast.info('No diet plans found. Showing demo data.');
+          setDietPlans(mockDietPlans);
+        } else {
+          setDietPlans(data);
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error('Failed to fetch diet plans. Showing demo data.');
+        setDietPlans(mockDietPlans);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDietPlans();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50 py-10 px-4 md:px-10">
+      <ToastContainer />
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Diet Plan Overview</h1>
 
-      {mockDietPlans.map((plan) => (
-        <div
-          key={plan._id}
-          className="bg-white shadow-lg rounded-2xl p-6 mb-8 border border-gray-200"
-        >
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-700">
-              Diet Plan (Period: {plan.period})
-            </h2>
-            {/* <span className="text-sm text-gray-500">User ID: {plan.userId}</span> */}
-          </div>
+      {loading ? (
+        <p className="text-gray-600">Loading diet plans...</p>
+      ) : (
+        dietPlans.map((plan) => (
+          <div
+            key={plan._id}
+            className="bg-white shadow-lg rounded-2xl p-6 mb-8 border border-gray-200"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-700">
+                Diet Plan (Period: {plan.period})
+              </h2>
+            </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {plan.meals.map((meal) => (
-              <div
-                key={meal.mealId}
-                className="border border-gray-200 rounded-xl p-4 bg-white hover:shadow-md transition"
-              >
-                <h3 className="text-lg font-medium text-blue-600 mb-1">
-                  {meal.mealType}
-                </h3>
-                <p className="text-sm text-gray-600 mb-2">
-                  <span className="font-semibold">Suggestions:</span>{' '}
-                  {meal.suggestedMeals.join(', ')}
-                </p>
-                <div className="text-sm text-gray-700">
-                  <p>
-                    <span className="font-semibold">Calories:</span>{' '}
-                    {meal.nutritionalValues.calories} kcal
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {plan.meals.map((meal) => (
+                <div
+                  key={meal.mealId}
+                  className="border border-gray-200 rounded-xl p-4 bg-white hover:shadow-md transition"
+                >
+                  <h3 className="text-lg font-medium text-blue-600 mb-1">
+                    {meal.mealType}
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-2">
+                    <span className="font-semibold">Suggestions:</span>{' '}
+                    {meal.suggestedMeals.join(', ')}
                   </p>
-                  <p>
-                    <span className="font-semibold">Proteins:</span>{' '}
-                    {meal.nutritionalValues.proteins} g
-                  </p>
+                  <div className="text-sm text-gray-700">
+                    <p>
+                      <span className="font-semibold">Calories:</span>{' '}
+                      {meal.nutritionalValues.calories} kcal
+                    </p>
+                    <p>
+                      <span className="font-semibold">Proteins:</span>{' '}
+                      {meal.nutritionalValues.proteins} g
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        ))
+      )}
     </div>
   );
 };
