@@ -8,18 +8,19 @@ import {
   TextField,
   Stack,
   Chip,
+  Typography,
 } from '@mui/material';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { ColumnDef } from '@tanstack/react-table';
 import { CommonTable } from '../component/commontable';
-import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { api } from '../axios/axiosinstance';
 
 interface IMeal {
-  _id: string;
+  _id?: string;
   name: string;
   category: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   dietaryTags: string[];
@@ -32,43 +33,15 @@ interface IMeal {
 }
 
 const schema = yup.object().shape({
-  name: yup.string().required(),
-  category: yup.string().required(),
-  dietaryTags: yup.array().of(yup.string()).required(),
+  name: yup.string().required('Name is required'),
+  category: yup.string().required('Category is required'),
+  dietaryTags: yup.array().of(yup.string()).min(1, 'Add at least one tag'),
   calories: yup.number().required().min(0),
   proteins: yup.number().required().min(0),
   carbs: yup.number().required().min(0),
   fats: yup.number().required().min(0),
-  ingredients: yup.array().of(yup.string()).optional()
+  ingredients: yup.array().of(yup.string().trim()).optional(),
 });
-
-// Dummy fallback meals
-const dummyMeals: IMeal[] = [
-  {
-    _id: '1',
-    name: 'Vegan Salad Bowl',
-    category: 'lunch',
-    dietaryTags: ['vegan', 'low-carb'],
-    calories: 350,
-    proteins: 12,
-    carbs: 25,
-    fats: 10,
-    ingredients: ['Lettuce', 'Tomato', 'Avocado'],
-    createdAt: new Date().toISOString()
-  },
-  {
-    _id: '2',
-    name: 'Oats with Berries',
-    category: 'breakfast',
-    dietaryTags: ['vegetarian'],
-    calories: 250,
-    proteins: 8,
-    carbs: 40,
-    fats: 5,
-    ingredients: ['Oats', 'Milk', 'Blueberries'],
-    createdAt: new Date().toISOString()
-  }
-];
 
 export default function MealManager() {
   const [meals, setMeals] = useState<IMeal[]>([]);
@@ -76,39 +49,36 @@ export default function MealManager() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(5);
   const [sortBy, setSortBy] = useState<string>();
-  const [order, setOrder] = useState<'asc' | 'desc'>();
+  const [order, setOrder] = useState<'asc' | 'desc'>('asc');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingMeal, setEditingMeal] = useState<IMeal | null>(null);
 
-  const API_URL = 'https://your-api-url.com/api/meals'; // 🔁 Replace with your backend URL
-
   const fetchMeals = async () => {
     try {
-      const res = await axios.get<IMeal[]>(API_URL);
-      if (!res.data || res.data.length === 0) {
-        toast.info('No meals found. Showing dummy data.');
-        setMeals(dummyMeals);
-      } else {
-        setMeals(res.data);
-      }
+      const res = await api.get('/api/user/getmeal');
+      setMeals(res.data?.data || []);
     } catch (err) {
       console.error(err);
-      toast.error('Failed to fetch meals. Using dummy data.');
-      setMeals(dummyMeals);
+      toast.error('Failed to fetch meals.');
     }
   };
 
   const saveMeal = async (data: IMeal) => {
     try {
-      if (editingMeal) {
-        const updated = await axios.put(`${API_URL}/user/add-meal/${editingMeal._id}`, data);
-        setMeals(prev => prev.map(m => (m._id === editingMeal._id ? updated.data : m)));
+      let response;
+      if (editingMeal && editingMeal._id) {
+        response = await api.post(`/api/user/update-meal/${editingMeal._id}`, data);
+        setMeals((prev) =>
+          prev.map((m) => (m._id === editingMeal._id ? response.data.data : m))
+        );
         toast.success('Meal updated successfully.');
       } else {
-        const created = await axios.post(API_URL, data);
-        setMeals(prev => [...prev, created.data]);
+        response = await api.post('/api/user/add-meals', data);
+        console.log("responseresponse",response)
+        setMeals((prev) => [...prev, response.data.data]);
         toast.success('Meal added successfully.');
       }
+      setModalOpen(false);
     } catch (err) {
       console.error(err);
       toast.error('Failed to save meal.');
@@ -119,16 +89,22 @@ export default function MealManager() {
     fetchMeals();
   }, []);
 
-  const filteredMeals = meals.filter(m =>
+  const filteredMeals = meals.filter((m) =>
     m.name.toLowerCase().includes(search.toLowerCase())
   );
+
   const sortedMeals = sortBy
     ? [...filteredMeals].sort((a, b) =>
         order === 'desc'
-          ? String(b[sortBy as keyof IMeal]).localeCompare(String(a[sortBy as keyof IMeal]))
-          : String(a[sortBy as keyof IMeal]).localeCompare(String(b[sortBy as keyof IMeal]))
+          ? String(b[sortBy as keyof IMeal]).localeCompare(
+              String(a[sortBy as keyof IMeal])
+            )
+          : String(a[sortBy as keyof IMeal]).localeCompare(
+              String(b[sortBy as keyof IMeal])
+            )
       )
     : filteredMeals;
+
   const paginatedMeals = sortedMeals.slice((page - 1) * limit, page * limit);
 
   const columns: ColumnDef<IMeal>[] = [
@@ -137,7 +113,7 @@ export default function MealManager() {
     {
       accessorKey: 'dietaryTags',
       header: 'Tags',
-      cell: ({ getValue }) => (getValue() as string[]).join(', ')
+      cell: ({ getValue }) => (getValue() as string[]).join(', '),
     },
     { accessorKey: 'calories', header: 'Calories' },
     { accessorKey: 'proteins', header: 'Proteins' },
@@ -146,11 +122,15 @@ export default function MealManager() {
     {
       header: 'Actions',
       cell: ({ row }) => (
-        <Button size="small" variant="outlined" onClick={() => handleEdit(row.original)}>
+        <Button
+          size="small"
+          variant="outlined"
+          onClick={() => handleEdit(row.original)}
+        >
           Edit
         </Button>
-      )
-    }
+      ),
+    },
   ];
 
   const handleEdit = (meal: IMeal) => {
@@ -161,11 +141,6 @@ export default function MealManager() {
   const handleAdd = () => {
     setEditingMeal(null);
     setModalOpen(true);
-  };
-
-  const handleSubmit = (data: IMeal) => {
-    saveMeal(data);
-    setModalOpen(false);
   };
 
   return (
@@ -198,7 +173,7 @@ export default function MealManager() {
       <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{editingMeal ? 'Edit Meal' : 'Add Meal'}</DialogTitle>
         <DialogContent>
-          <MealForm defaultValues={editingMeal || undefined} onSubmit={handleSubmit} />
+          <MealForm defaultValues={editingMeal || undefined} onSubmit={saveMeal} />
         </DialogContent>
       </Dialog>
     </>
@@ -207,7 +182,7 @@ export default function MealManager() {
 
 function MealForm({
   defaultValues,
-  onSubmit
+  onSubmit,
 }: {
   defaultValues?: IMeal;
   onSubmit: (data: IMeal) => void;
@@ -218,10 +193,19 @@ function MealForm({
     setValue,
     getValues,
     reset,
-    formState: { errors }
+    formState: { errors },
   } = useForm<IMeal>({
-    defaultValues,
-    resolver: yupResolver(schema)
+    resolver: yupResolver(schema),
+    defaultValues: defaultValues || {
+      name: '',
+      category: 'breakfast',
+      dietaryTags: [],
+      calories: 0,
+      proteins: 0,
+      carbs: 0,
+      fats: 0,
+      ingredients: [],
+    },
   });
 
   useEffect(() => {
@@ -243,7 +227,7 @@ function MealForm({
 
   const handleRemoveTag = (tag: string) => {
     const currentTags = getValues('dietaryTags') || [];
-    setValue('dietaryTags', currentTags.filter(t => t !== tag));
+    setValue('dietaryTags', currentTags.filter((t) => t !== tag));
   };
 
   return (
@@ -251,6 +235,7 @@ function MealForm({
       <Stack spacing={2} mt={2}>
         <TextField
           label="Name"
+          fullWidth
           {...register('name')}
           error={!!errors.name}
           helperText={errors.name?.message}
@@ -258,11 +243,12 @@ function MealForm({
         <TextField
           select
           label="Category"
+          fullWidth
           {...register('category')}
           error={!!errors.category}
           helperText={errors.category?.message}
         >
-          {['breakfast', 'lunch', 'dinner', 'snack'].map(cat => (
+          {['breakfast', 'lunch', 'dinner', 'snack'].map((cat) => (
             <MenuItem key={cat} value={cat}>
               {cat}
             </MenuItem>
@@ -274,43 +260,53 @@ function MealForm({
           placeholder="Press Enter to add"
         />
         <Stack direction="row" spacing={1}>
-          {(getValues('dietaryTags') || []).map(tag => (
+          {(getValues('dietaryTags') || []).map((tag) => (
             <Chip key={tag} label={tag} onDelete={() => handleRemoveTag(tag)} />
           ))}
         </Stack>
+
         <TextField
           type="number"
           label="Calories"
+          fullWidth
           {...register('calories')}
           error={!!errors.calories}
+          helperText={errors.calories?.message}
         />
         <TextField
           type="number"
           label="Proteins"
+          fullWidth
           {...register('proteins')}
           error={!!errors.proteins}
+          helperText={errors.proteins?.message}
         />
         <TextField
           type="number"
           label="Carbs"
+          fullWidth
           {...register('carbs')}
           error={!!errors.carbs}
+          helperText={errors.carbs?.message}
         />
         <TextField
           type="number"
           label="Fats"
+          fullWidth
           {...register('fats')}
           error={!!errors.fats}
+          helperText={errors.fats?.message}
         />
         <TextField
           label="Ingredients (comma separated)"
+          fullWidth
           defaultValue={defaultValues?.ingredients?.join(', ') || ''}
-          onBlur={e =>
+          onBlur={(e) =>
             setValue(
               'ingredients',
               e.target.value
                 .split(',')
-                .map(i => i.trim())
+                .map((i) => i.trim())
                 .filter(Boolean)
             )
           }

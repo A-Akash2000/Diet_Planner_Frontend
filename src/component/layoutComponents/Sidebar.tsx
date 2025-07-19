@@ -58,6 +58,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             <Cog6ToothIcon className="w-5 h-5" />
             Diet Plans
           </Link>
+             <Link to="/Bmilogs" onClick={onClose} className={linkClass('/Bmilogs')}>
+            <Cog6ToothIcon className="w-5 h-5" />
+           BMI-History
+          </Link>
           <div
             onClick={handleLogout}
             className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600 cursor-pointer rounded-md transition"

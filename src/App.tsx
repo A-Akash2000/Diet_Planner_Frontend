@@ -9,6 +9,7 @@ const Home = lazy(() => import('./pages/home'));
 const Userlist = lazy(() => import('./pages/userlist'));
 const MenuManger = lazy(() => import('./pages/mealmanger'));
 const Dietplans = lazy(()=> import('./pages/DietPlans'))
+const Bmilogs = lazy(()=> import('./pages/bmilog'))
 function App() {
   return (
     <Suspense fallback={<Loader />}>
@@ -19,6 +20,7 @@ function App() {
         <Route path="/userlist" element={<ProtectedRoute><Userlist /></ProtectedRoute>} />
         <Route path="/MealsManager" element={<ProtectedRoute><MenuManger /></ProtectedRoute>} />
         <Route path="/Dietplans" element={<ProtectedRoute><Dietplans /></ProtectedRoute>} />
+        <Route path="/Bmilogs" element={<ProtectedRoute><Bmilogs /></ProtectedRoute>} />
       </Routes>
     </Suspense>
   );
