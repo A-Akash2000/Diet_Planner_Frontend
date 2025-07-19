@@ -10,13 +10,7 @@ import {
   Chip,
   Paper,
   TableContainer,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
   Typography,
-  Divider,
 } from '@mui/material';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -38,13 +32,13 @@ interface IMeal {
 }
 
 const schema = yup.object().shape({
-  name: yup.string().required('Meal name is required'),
-  category: yup.string().required('Category is required'),
-  dietaryTags: yup.array().of(yup.string()).required('At least one dietary tag is required'),
-  calories: yup.number().required().min(0, 'Calories must be a positive number'),
-  proteins: yup.number().required().min(0, 'Proteins must be a positive number'),
-  carbs: yup.number().required().min(0, 'Carbs must be a positive number'),
-  fats: yup.number().required().min(0, 'Fats must be a positive number'),
+  name: yup.string().required(),
+  category: yup.string().required(),
+  dietaryTags: yup.array().of(yup.string()).required(),
+  calories: yup.number().required().min(0),
+  proteins: yup.number().required().min(0),
+  carbs: yup.number().required().min(0),
+  fats: yup.number().required().min(0),
   ingredients: yup.array().of(yup.string()).optional()
 });
 
@@ -112,12 +106,7 @@ export default function MealManager() {
     {
       header: 'Actions',
       cell: ({ row }) => (
-        <Button
-          size="small"
-          variant="outlined"
-          color="primary"
-          onClick={() => handleEdit(row.original)}
-        >
+        <Button size="small" variant="outlined" onClick={() => handleEdit(row.original)}>
           Edit
         </Button>
       )
@@ -154,7 +143,7 @@ export default function MealManager() {
 
   return (
     <>
-      <Button variant="contained" onClick={handleAdd} sx={{ mb: 2 }} color="primary">
+      <Button variant="contained" onClick={handleAdd} sx={{ mb: 2 }}>
         Add Meal
       </Button>
 
@@ -231,13 +220,12 @@ function MealForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <Stack spacing={3} sx={{ width: '100%' }}>
+      <Stack spacing={2} mt={2}>
         <TextField
-          label="Meal Name"
+          label="Name"
           {...register('name')}
           error={!!errors.name}
           helperText={errors.name?.message}
-          fullWidth
         />
         <TextField
           select
@@ -245,7 +233,6 @@ function MealForm({
           {...register('category')}
           error={!!errors.category}
           helperText={errors.category?.message}
-          fullWidth
         >
           {['breakfast', 'lunch', 'dinner', 'snack'].map(cat => (
             <MenuItem key={cat} value={cat}>
@@ -253,46 +240,39 @@ function MealForm({
             </MenuItem>
           ))}
         </TextField>
-
         <TextField
           label="Add Dietary Tag"
           onKeyDown={handleTagAdd}
           placeholder="Press Enter to add"
-          fullWidth
         />
         <Stack direction="row" spacing={1}>
           {(getValues('dietaryTags') || []).map(tag => (
             <Chip key={tag} label={tag} onDelete={() => handleRemoveTag(tag)} />
           ))}
         </Stack>
-
         <TextField
           type="number"
           label="Calories"
           {...register('calories')}
           error={!!errors.calories}
-          fullWidth
         />
         <TextField
           type="number"
           label="Proteins"
           {...register('proteins')}
           error={!!errors.proteins}
-          fullWidth
         />
         <TextField
           type="number"
           label="Carbs"
           {...register('carbs')}
           error={!!errors.carbs}
-          fullWidth
         />
         <TextField
           type="number"
           label="Fats"
           {...register('fats')}
           error={!!errors.fats}
-          fullWidth
         />
         <TextField
           label="Ingredients (comma separated)"
@@ -306,9 +286,8 @@ function MealForm({
                 .filter(Boolean)
             )
           }
-          fullWidth
         />
-        <Button type="submit" variant="contained" color="primary" sx={{ mt: 2 }}>
+        <Button type="submit" variant="contained">
           Save
         </Button>
       </Stack>

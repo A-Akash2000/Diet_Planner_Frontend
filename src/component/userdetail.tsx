@@ -66,7 +66,7 @@ export default function UserDetailsPage() {
     try {
       setLoading(true);
       const res = await api.get(`/api/user/get-userdetails/${_id}`);
-      console.log("res for get user details")
+      console.log("res for get user details",res)
       if (res.data?.data) {
         setUserDetails(res.data.data);
         reset(res.data.data);
