@@ -1,2 +1,2 @@
-# Diet_Planner_Frontend
-Personalized Diet Planner
+# training_frontend
+Hospital frontend
