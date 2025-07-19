@@ -110,8 +110,7 @@ export default function UserList() {
             <div><span className="font-semibold">Role:</span> {reduxUser.role}</div>
             <div><span className="font-semibold">Joining Date:</span> {moment(reduxUser.createdAt).format('DD MMM YYYY, hh:mm A')}</div>
           </div>
-
-          <div className="mt-8 flex justify-between items-center">
+          <div className="mt-8 flex justify-end">
             <button
               onClick={() => {
                 setSelectedUser(reduxUser);
@@ -122,6 +121,7 @@ export default function UserList() {
               Edit Profile
             </button>
           </div>
+
 
           <RegisterFormModal
             isOpen={isModalOpen}
